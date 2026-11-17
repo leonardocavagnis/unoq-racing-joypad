@@ -6,11 +6,17 @@ const distanceEl = document.getElementById('distance');
 const speedEl = document.getElementById('speed-display');
 const gameOverScreen = document.getElementById('game-over');
 const startScreen = document.getElementById('start-screen');
+const steeringToggleBtn = document.getElementById('steering-toggle');
+
+const MODE_JOYSTICK = 1;
+const MODE_IMU = 2;
+let currentSteeringMode = MODE_JOYSTICK; // Default: Joystick
 
 let isGameStarted = false;
 let isGameOver = false;
 let canRestart = false;
 let distance = 0;
+let lastFrameTime = 0;
 
 // Speed and physics variables
 const MIN_SPEED = 5;
@@ -28,9 +34,20 @@ let lastObstacleDistance = 0;
 // --- SOCKET.IO COMMUNICATION WITH PYTHON (WEB_UI BRICK) ---
 let socket = null;
 
+function sendSteeringMode(mode) {
+    if (socket && socket.connected) {
+        socket.emit('set_steering_mode', { mode: mode });
+    }
+}
+
 if (typeof io !== 'undefined' && window.location.protocol !== 'file:') {
     try {
         socket = io();
+
+        // Sync active steering mode upon connection
+        socket.on('connect', () => {
+            sendSteeringMode(currentSteeringMode);
+        });
 
         // 1. Receives real-time steering input from Python (Joystick or IMU)
         socket.on('steering_update', (data) => {
@@ -46,6 +63,26 @@ if (typeof io !== 'undefined' && window.location.protocol !== 'file:') {
     } catch (e) {
         console.log("Socket.IO initialization skipped (local PC mode)");
     }
+}
+
+// Toggle button between Joystick and IMU
+if (steeringToggleBtn) {
+    steeringToggleBtn.addEventListener('click', () => {
+        currentSteeringMode = (currentSteeringMode === MODE_JOYSTICK) ? MODE_IMU : MODE_JOYSTICK;
+        steeringInput = 0;
+
+        if (currentSteeringMode === MODE_IMU) {
+            steeringToggleBtn.textContent = 'Steer: IMU';
+            steeringToggleBtn.classList.add('imu-active');
+        } else {
+            steeringToggleBtn.textContent = 'Steer: JOYSTICK';
+            steeringToggleBtn.classList.remove('imu-active');
+        }
+
+        // Remove focus so Spacebar does not trigger the button again
+        steeringToggleBtn.blur();
+        sendSteeringMode(currentSteeringMode);
+    });
 }
 
 // 3. Sends current speed to update Modulino Pixels
@@ -125,8 +162,6 @@ function handleCrash() {
     }, 1000);
 }
 
-let lastFrameTime = 0;
-
 // Start or Restart Game (Joystick Click or Space/Enter)
 function startGameAction() {
     if (!isGameStarted) {
@@ -160,7 +195,6 @@ function gameLoop(timestamp) {
     if (isGameOver || !isGameStarted) return;
 
     if (!lastFrameTime) lastFrameTime = timestamp;
-    // Normalizza la velocità su base 60 FPS (evita effetto turbo su schermi 120/144 Hz)
     const dt = Math.min((timestamp - lastFrameTime) / (1000 / 60), 3);
     lastFrameTime = timestamp;
 

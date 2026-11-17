@@ -4,32 +4,26 @@
 // ==========================================
 // STEERING CONTROLLER CONFIGURATION
 // ==========================================
-#define MODE_JOYSTICK 1
-#define MODE_IMU      2
-
-// Select steering controller: MODE_JOYSTICK or MODE_IMU
-// (Joystick click remains active in both modes)
-#define STEERING_MODE MODE_JOYSTICK
+const int MODE_JOYSTICK = 1;
+const int MODE_IMU      = 2;
 
 // IMU calibration parameters
 const float IMU_DEADZONE = 0.04f; // Center deadzone
 const float IMU_MAX_TILT = 0.35f; // Tilt threshold for maximum steering
 // ==========================================
 
-#if STEERING_MODE == MODE_IMU
-  ModulinoMovement imu;
-#endif
-
+ModulinoMovement imu;
 ModulinoJoystick joystick;
 ModulinoPixels leds;
 ModulinoVibro vibro;
 
 // Parameters synchronized with app.js (MIN_SPEED = 5, MAX_SPEED = 20)
 const int MIN_SPEED = 5;
-const int MAX_SPEED = 20;
+const int MAX_SPEED = 12; // 120 Km/h
 const int LED_BRIGHTNESS = 60;
 
 // Shared variables between Bridge RPC and main loop()
+volatile int steeringMode = MODE_JOYSTICK; // Default: Joystick
 volatile int currentSpeed = MIN_SPEED;
 volatile bool speedDirty = true;
 volatile bool crashTriggered = false;
@@ -46,6 +40,13 @@ const unsigned long POLL_INTERVAL_MS = 20; // 50 Hz
 bool lastButtonState = false;
 
 // --- FUNCTIONS CALLED BY PYTHON VIA BRIDGE ---
+
+void setSteeringMode(int mode) {
+  if (mode == MODE_JOYSTICK || mode == MODE_IMU) {
+    steeringMode = mode;
+    lastSteering = 0.0f;
+  }
+}
 
 void setSpeedLeds(int speed) {
   if (inCrashFlash && (millis() - crashTimestamp < 300)) {
@@ -78,46 +79,43 @@ void updatePixelsBar(int speed) {
   leds.show();
 }
 
-// Reads steering from the selected controller, returning a value between -1.0 and 1.0
+// Reads steering from the active controller, returning a value between -1.0 and 1.0
 bool readSteering(bool joyUpdated, float &steeringOut) {
-#if STEERING_MODE == MODE_IMU
-  (void)joyUpdated;
-  if (!imu.update()) return false;
+  if (steeringMode == MODE_IMU) {
+    if (!imu.update()) return false;
 
-  float tilt = -imu.getX();
-  if (abs(tilt) <= IMU_DEADZONE) {
-    steeringOut = 0.0f;
+    float tilt = -imu.getX();
+    if (abs(tilt) <= IMU_DEADZONE) {
+      steeringOut = 0.0f;
+    } else {
+      float sign = (tilt > 0.0f) ? 1.0f : -1.0f;
+      float normalized = (abs(tilt) - IMU_DEADZONE) / (IMU_MAX_TILT - IMU_DEADZONE);
+      steeringOut = constrain(sign * normalized, -1.0f, 1.0f);
+    }
+    return true;
   } else {
-    float sign = (tilt > 0.0f) ? 1.0f : -1.0f;
-    float normalized = (abs(tilt) - IMU_DEADZONE) / (IMU_MAX_TILT - IMU_DEADZONE);
-    steeringOut = constrain(sign * normalized, -1.0f, 1.0f);
-  }
-  return true;
-#else
-  if (!joyUpdated) return false;
+    if (!joyUpdated) return false;
 
-  int8_t rawX = joystick.getX();
-  steeringOut = constrain(-(float)rawX / 127.0f, -1.0f, 1.0f);
-  return true;
-#endif
+    int8_t rawX = joystick.getX();
+    steeringOut = constrain(-(float)rawX / 127.0f, -1.0f, 1.0f);
+    return true;
+  }
 }
 
 void setup() {
   Bridge.begin();
   Modulino.begin();
 
-  // Always initialize joystick (needed for start/restart click in both modes)
+  // Initialize all Qwiic modules so runtime switching works immediately
   for (int i = 0; i < 4 && !joystick.begin(); i++) delay(100);
   joystick.setDeadZone(20);
 
-#if STEERING_MODE == MODE_IMU
   for (int i = 0; i < 4 && !imu.begin(); i++) delay(100);
-#endif
-
   for (int i = 0; i < 4 && !leds.begin(); i++) delay(100);
   for (int i = 0; i < 4 && !vibro.begin(); i++) delay(100);
 
   // Register functions callable from python/main.py
+  Bridge.provide("set_steering_mode", setSteeringMode);
   Bridge.provide("set_speed_leds", setSpeedLeds);
   Bridge.provide("trigger_vibro", triggerVibro);
 

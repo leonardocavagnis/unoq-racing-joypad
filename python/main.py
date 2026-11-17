@@ -25,7 +25,13 @@ def on_button_press(value):
 
 Bridge.provide("button_press", on_button_press)
 
+# 5. Receives steering mode toggle from the browser (JS -> Python -> MCU)
+def on_set_steering_mode(client_id, data):
+    if isinstance(data, dict) and "mode" in data:
+        Bridge.call("set_steering_mode", int(data["mode"]))
+
 ui.on_message("speed_update", on_speed_update)
 ui.on_message("collision", on_collision)
+ui.on_message("set_steering_mode", on_set_steering_mode)
 
 App.run()
