@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arduino UNO Q - Racing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="road"></div>
+        <div id="player"></div>
+        <div id="score-board">
+            Distance: <span id="distance">0</span> m<br>
+            Speed: <span id="speed-display">0</span> km/h
+        </div>
+        <div id="start-screen">
+          <h2>UNO Q RACING</h2>
+          <p>Press the Joystick<br>to start</p>
+        </div>
+        <div id="game-over">
+          <h2>CRASH!</h2>
+          <p>Press the Joystick<br>to restart</p>
+        </div>
+    </div>
+
+    <script src="libs/socket.io.min.js"></script>
+    <script>
+        if (typeof io === 'undefined') {
+            document.write('<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"><\/script>');
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
