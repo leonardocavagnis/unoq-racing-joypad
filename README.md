@@ -16,6 +16,10 @@ Drive your car down an endless road, dodge incoming obstacles, and go as far as 
 - [Modulino Pixels](https://store.arduino.cc/products/modulino-pixels) — 8-LED speed bar
 - [Modulino Vibro](https://store.arduino.cc/products/Modulino-vibro) — crash feedback
 
+## Getting Started
+
+Download this repository as a **ZIP** file, import it into **Arduino App Lab**, click **Run**, and open `http://localhost:7000` (or `http://<YOUR_UNO_Q_IP>:7000`) in your browser to play.
+
 ## How to Play
 
 1. Press the joystick button to start.
