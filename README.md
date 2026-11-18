@@ -18,6 +18,8 @@ Drive your car down an endless road, dodge incoming obstacles, and go as far as 
 
 ![Hardware preview](assets/unoqjoypad.jpg)
 
+*🖨️ **Bonus:** Want to build the custom steering wheel? Download the 3D printable model [here](hardware/3dprint/wheel-board.3mf).*
+
 ## Getting Started
 
 Download this repository as a **ZIP** file, import it into **Arduino App Lab**, click **Run**, and open `http://localhost:7000` (or `http://<YOUR_UNO_Q_IP>:7000`) in your browser to play.
