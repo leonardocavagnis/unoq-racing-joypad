@@ -37,3 +37,7 @@ Speed increases the longer you survive, and the LED strip doubles as a live spee
 - `python/main.py` — bridges joystick/IMU input and game events between the browser and the board
 - `sketch/sketch.ino` — reads the Modulino Joystick/IMU, drives the LED bar and vibration motor
 - `assets/` — browser game (HTML, CSS, JS)
+
+## Authors
+- [Leonardo Cavagnis](https://github.com/leonardocavagnis)
+- [Jim Bruges](https://github.com/jimbruges)
