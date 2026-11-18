@@ -1,6 +1,6 @@
 # 🕹️ UNO Q Racing Joypad
 
-An endless top-down racing game for the browser, controlled with physical Arduino hardware. Built with [Arduino App Lab](https://www.arduino.cc/).
+An endless top-down racing game for the browser with Arduino UNO Q. Built with [Arduino App Lab](https://docs.arduino.cc/software/app-lab/). 
 
 ## Overview
 
@@ -10,11 +10,11 @@ Drive your car down an endless road, dodge incoming obstacles, and go as far as 
 
 ## Hardware
 
-- Arduino UNO Q
-- Modulino Joystick — steering (joystick mode) and start/restart button
-- Modulino Movement (IMU) — steering (tilt mode)
-- Modulino Pixels — 8-LED speed bar
-- Modulino Vibro — crash feedback
+- [Arduino UNO Q](https://store.arduino.cc/products/uno-q-4gb)
+- [Modulino Joystick](https://store.arduino.cc/products/modulino-joystick) — steering (joystick mode) and start/restart button
+- [Modulino Movement (IMU)](https://store.arduino.cc/products/modulino-movement) — steering (tilt mode)
+- [Modulino Pixels](https://store.arduino.cc/products/modulino-pixels) — 8-LED speed bar
+- [Modulino Vibro](https://store.arduino.cc/products/Modulino-vibro) — crash feedback
 
 ## How to Play
 
