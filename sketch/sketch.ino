@@ -1,16 +1,12 @@
 #include <Arduino_RouterBridge.h>
 #include <Modulino.h>
-
-// ==========================================
-// STEERING CONTROLLER CONFIGURATION
-// ==========================================
+ 
 const int MODE_JOYSTICK = 1;
 const int MODE_IMU      = 2;
 
 // IMU calibration parameters
 const float IMU_DEADZONE = 0.04f; // Center deadzone
 const float IMU_MAX_TILT = 0.35f; // Tilt threshold for maximum steering
-// ==========================================
 
 ModulinoMovement imu;
 ModulinoJoystick joystick;
@@ -22,7 +18,6 @@ const int MIN_SPEED = 5;
 const int MAX_SPEED = 12; // 120 Km/h
 const int LED_BRIGHTNESS = 60;
 
-// Shared variables between Bridge RPC and main loop()
 volatile int steeringMode = MODE_JOYSTICK; // Default: Joystick
 volatile int currentSpeed = MIN_SPEED;
 volatile bool speedDirty = true;
@@ -38,8 +33,6 @@ float lastSteering = 0.0f;
 unsigned long lastPollTime = 0;
 const unsigned long POLL_INTERVAL_MS = 20; // 50 Hz
 bool lastButtonState = false;
-
-// --- FUNCTIONS CALLED BY PYTHON VIA BRIDGE ---
 
 void setSteeringMode(int mode) {
   if (mode == MODE_JOYSTICK || mode == MODE_IMU) {
@@ -61,7 +54,6 @@ void triggerVibro() {
   crashTriggered = true;
 }
 
-// Updates the 8-LED strip like a tachometer
 void updatePixelsBar(int speed) {
   int activeLeds = map(speed, MIN_SPEED, MAX_SPEED, 1, 8);
   activeLeds = constrain(activeLeds, 1, 8);
@@ -79,7 +71,6 @@ void updatePixelsBar(int speed) {
   leds.show();
 }
 
-// Reads steering from the active controller, returning a value between -1.0 and 1.0
 bool readSteering(bool joyUpdated, float &steeringOut) {
   if (steeringMode == MODE_IMU) {
     if (!imu.update()) return false;
@@ -106,7 +97,6 @@ void setup() {
   Bridge.begin();
   Modulino.begin();
 
-  // Initialize all Qwiic modules so runtime switching works immediately
   for (int i = 0; i < 4 && !joystick.begin(); i++) delay(100);
   joystick.setDeadZone(20);
 
@@ -114,7 +104,6 @@ void setup() {
   for (int i = 0; i < 4 && !leds.begin(); i++) delay(100);
   for (int i = 0; i < 4 && !vibro.begin(); i++) delay(100);
 
-  // Register functions callable from python/main.py
   Bridge.provide("set_steering_mode", setSteeringMode);
   Bridge.provide("set_speed_leds", setSpeedLeds);
   Bridge.provide("trigger_vibro", triggerVibro);

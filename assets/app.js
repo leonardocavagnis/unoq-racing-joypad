@@ -1,4 +1,3 @@
-// --- GAME CONFIGURATION ---
 const gameContainer = document.getElementById('game-container');
 const road = document.getElementById('road');
 const player = document.getElementById('player');
@@ -31,7 +30,6 @@ let steeringInput = 0; // From -1.0 (left) to 1.0 (right)
 let obstacles = [];
 let lastObstacleDistance = 0;
 
-// --- SOCKET.IO COMMUNICATION WITH PYTHON (WEB_UI BRICK) ---
 let socket = null;
 
 function sendSteeringMode(mode) {
