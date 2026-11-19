@@ -1,8 +1,15 @@
+/* ==========================================================================
+   Pseudo-3D racing scene.
+   The vanishing point is (200px, 175px) inside the 400x600 game container;
+   app.js projects every moving element toward it. Solids (the car, the
+   barriers) are drawn face by face: each face is a .quad whose shape is set
+   from JS, so this file only has to describe how the faces are painted.
+   ========================================================================== */
+
 body {
     margin: 0;
     padding: 0;
-    background:
-        radial-gradient(circle at 50% 20%, #1f3a5f 0%, #0d1b2a 60%, #060c14 100%);
+    background: radial-gradient(circle at 50% 20%, #1f3a5f 0%, #0d1b2a 60%, #060c14 100%);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -15,137 +22,194 @@ body {
     position: relative;
     width: 400px;
     height: 600px;
-    background-color: #2f9e2f; /* Erba verde */
-    background-image:
-        radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
-    background-size: 14px 14px;
     overflow: hidden;
     border: 4px solid #e8f1ff;
     border-radius: 14px;
     box-shadow:
         0 0 0 2px rgba(241, 196, 15, 0.25),
-        0 10px 30px rgba(0,0,0,0.6),
+        0 10px 30px rgba(0, 0, 0, 0.6),
         0 0 40px rgba(46, 204, 113, 0.25);
 }
 
-/* Vignette ai bordi per dare profondita' alla scena */
+/* Vignette: above the track and the cars, below the HUD */
 #game-container::after {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
-    box-shadow: inset 0 0 60px rgba(0,0,0,0.45);
-    z-index: 15;
+    box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.55);
+    z-index: 150;
+}
+
+/* --- Horizon --------------------------------------------------------- */
+
+#sky {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 175px;
+    overflow: hidden;
+    background: linear-gradient(#140d33 0%, #3d1f63 35%, #c0392b 78%, #ff9b42 100%);
+    z-index: 1;
+}
+
+/* Centred on the vanishing point: the disc's centre is exactly (200, 175),
+   so the road runs straight into the middle of the sun. The sky clips the
+   lower half. */
+#sun {
+    position: absolute;
+    left: 120px;
+    top: 95px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background:
+        repeating-linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0) 0 11px,
+            rgba(60, 14, 50, 0.5) 11px 15px
+        ),
+        linear-gradient(#fff3b0, #ffb347 45%, #ff7043 75%, #e74c3c 100%);
+    box-shadow: 0 0 60px rgba(255, 140, 66, 0.65);
+}
+
+#ground {
+    position: absolute;
+    top: 175px;
+    left: 0;
+    width: 100%;
+    height: 425px;
+    background: linear-gradient(#17501b 0%, #2a8a2a 35%, #37ab37 100%);
+    z-index: 1;
+}
+
+/* --- Scrolling grass bands (pooled divs, positioned by app.js) -------- */
+
+#bands {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+
+.band {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+/* --- Road ------------------------------------------------------------- */
+
+/* Slightly wider triangle behind the asphalt: becomes the white kerb */
+#road-edge {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: #e8f1ff;
+    clip-path: polygon(44px 600px, 356px 600px, 200px 175px);
 }
 
 #road {
     position: absolute;
-    top: -600px;
-    left: 50px;
-    width: 300px;
-    height: 1200px;
-    box-sizing: border-box;
-    background-color: #4a4f57;
-    background-image:
-        linear-gradient(90deg, rgba(0,0,0,0.25) 0%, transparent 10%, transparent 90%, rgba(0,0,0,0.25) 100%),
-        repeating-linear-gradient(0deg, transparent, transparent 40px, #f1c40f 40px, #f1c40f 80px);
-    background-size: 100% 100%, 8px 80px;
-    background-repeat: no-repeat, repeat-y; /* Evita le strisce orizzontali su tutta la strada */
-    background-position: center 0px;
-    border-left: 5px solid #e8f1ff;
-    border-right: 5px solid #e8f1ff;
+    inset: 0;
+    z-index: 4;
+    background: linear-gradient(#2b2f36 0%, #3f444d 45%, #4a4f57 100%);
+    clip-path: polygon(50px 600px, 350px 600px, 200px 175px);
 }
 
-#player {
+#dashes {
     position: absolute;
-    bottom: 50px;
-    left: 175px; /* Centro della strada */
-    width: 50px;
-    height: 80px;
-    background: linear-gradient(135deg, #ff5f4d 0%, #c0392b 100%);
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+    inset: 0;
+    z-index: 5;
 }
 
-/* Parabrezza e tettuccio, piu' le 4 ruote viste dall'alto (via box-shadow) */
-#player::before {
-    content: "";
+.dash {
     position: absolute;
-    top: 18px;
-    left: 7px;
-    width: 36px;
-    height: 40px;
-    background: linear-gradient(160deg, #4facfe 0%, #1a2a3a 70%);
-    border-radius: 5px;
-    box-shadow:
-        -23px -18px 0 -14px #1a1a1a,
-        23px -18px 0 -14px #1a1a1a,
-        -23px 24px 0 -14px #1a1a1a,
-        23px 24px 0 -14px #1a1a1a;
+    top: 0;
+    left: 0;
+    background: #f1c40f;
+    box-shadow: 0 0 6px rgba(241, 196, 15, 0.5);
 }
 
-/* Fari anteriori */
-#player::after {
-    content: "";
+/* --- Solids ----------------------------------------------------------- */
+
+/* One face of a box. Position, size and (for the slanted faces) clip-path
+   are all written by app.js from the projected corners. */
+.quad {
     position: absolute;
-    top: 4px;
-    left: 8px;
-    width: 10px;
-    height: 5px;
-    background-color: #fff6cc;
-    border-radius: 2px;
-    box-shadow:
-        24px 0 0 #fff6cc,
-        0 0 6px 2px rgba(255, 246, 204, 0.8),
-        24px 0 6px 2px rgba(255, 246, 204, 0.8);
+    top: 0;
+    left: 0;
 }
 
-#start-screen {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(160deg, rgba(31,58,95,0.95), rgba(13,27,42,0.97));
-    color: white;
-    padding: 24px 28px;
-    border-radius: 14px;
-    text-align: center;
-    border: 2px solid #f1c40f;
-    box-shadow: 0 0 25px rgba(241, 196, 15, 0.35), 0 10px 25px rgba(0,0,0,0.5);
-    z-index: 30;
-}
-
-#start-screen h2, #game-over h2 {
-    margin: 0 0 8px;
-    letter-spacing: 2px;
-    text-shadow: 0 0 10px currentColor;
-}
-
-#start-screen h2 {
-    color: #f1c40f;
-}
-
-#start-screen p, #game-over p {
-    animation: pulse 1.4s ease-in-out infinite;
-}
-
-/* Ostacoli stile barriera stradale */
+/* Each solid lives in a full-size wrapper so a single z-index sorts it
+   against the other solids by depth. */
+#player,
 .obstacle {
     position: absolute;
-    width: 50px;
-    height: 50px;
-    box-sizing: border-box;
+    inset: 0;
+    pointer-events: none;
+}
+
+/* Road barriers: lit top, hazard stripes facing the driver, dark flank */
+.obs-shadow {
+    background: rgba(0, 0, 0, 0.45);
+    filter: blur(3px);
+}
+
+.obs-side {
+    background: linear-gradient(#8a6d1f, #574510);
+}
+
+.obs-top {
+    background: linear-gradient(#fff0a8, #f3cf4a);
+}
+
+.obs-near {
+    --stripe: 7px;
     background: repeating-linear-gradient(
         45deg,
-        #f1c40f,
-        #f1c40f 8px,
-        #2c3e50 8px,
-        #2c3e50 16px
+        #f1c40f 0 var(--stripe),
+        #2c3e50 var(--stripe) calc(var(--stripe) * 2)
     );
-    border: 3px solid #f1c40f;
-    border-radius: 6px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4), 0 0 12px rgba(241, 196, 15, 0.45);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
+
+/* Player car: tyres, body and cabin, each a projected box */
+.car-shadow {
+    background: rgba(0, 0, 0, 0.4);
+    filter: blur(4px);
+}
+
+.wheel-side { background: #0b0b0b; }
+.wheel-near { background: #1c1c1c; }
+
+.body-side { background: linear-gradient(#a32c1e, #6b1b11); }
+.body-top  { background: linear-gradient(#ff8370, #d6412f); }
+.body-near { background: linear-gradient(#d6412f, #9e2a1d); }
+
+/* Tail lights sit on the flat rear face, so percentages line up */
+.body-near::before,
+.body-near::after {
+    content: "";
+    position: absolute;
+    top: 22%;
+    width: 17%;
+    height: 40%;
+    border-radius: 2px;
+    background: #ff3b30;
+    box-shadow: 0 0 7px rgba(255, 59, 48, 0.95);
+}
+
+.body-near::before { left: 9%; }
+.body-near::after  { right: 9%; }
+
+.cabin-side { background: linear-gradient(#24364a, #141f2b); }
+.cabin-top  { background: linear-gradient(#ff8a78, #e05140); }
+.cabin-near { background: linear-gradient(#7cc0ff, #1b2b3a); }
+
+/* --- HUD -------------------------------------------------------------- */
 
 #score-board {
     position: absolute;
@@ -154,12 +218,12 @@ body {
     color: #eafff0;
     font-size: 18px;
     font-weight: bold;
-    background: linear-gradient(160deg, rgba(0,0,0,0.75), rgba(20,20,20,0.55));
+    background: linear-gradient(160deg, rgba(0, 0, 0, 0.78), rgba(20, 20, 20, 0.58));
     padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid rgba(46, 204, 113, 0.4);
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    z-index: 10;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.35);
+    z-index: 200;
 }
 
 #score-board span {
@@ -167,24 +231,108 @@ body {
     text-shadow: 0 0 6px rgba(46, 204, 113, 0.7);
 }
 
+#steering-toggle,
+#sound-toggle {
+    position: absolute;
+    background: linear-gradient(160deg, rgba(0, 0, 0, 0.8), rgba(20, 20, 20, 0.6));
+    color: #2ecc71;
+    border: 2px solid #2ecc71;
+    border-radius: 20px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    z-index: 200;
+    box-shadow: 0 0 8px rgba(46, 204, 113, 0.35);
+    transition: all 0.15s ease;
+}
+
+#steering-toggle {
+    top: 10px;
+    right: 10px;
+    padding: 8px 14px;
+}
+
+#steering-toggle:hover,
+#sound-toggle:hover {
+    background: rgba(44, 62, 80, 0.95);
+    box-shadow: 0 0 14px rgba(46, 204, 113, 0.55);
+    transform: translateY(-1px);
+}
+
+#steering-toggle.imu-active {
+    color: #f1c40f;
+    border-color: #f1c40f;
+    box-shadow: 0 0 8px rgba(241, 196, 15, 0.35);
+}
+
+#steering-toggle.imu-active:hover {
+    box-shadow: 0 0 14px rgba(241, 196, 15, 0.55);
+}
+
+#sound-toggle {
+    top: 52px;
+    right: 10px;
+    padding: 5px 10px;
+    font-size: 15px;
+    line-height: 1;
+}
+
+#sound-toggle.muted {
+    color: #7f8c8d;
+    border-color: #7f8c8d;
+    box-shadow: none;
+}
+
+/* --- Overlays --------------------------------------------------------- */
+
+#start-screen,
 #game-over {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(160deg, rgba(192,57,43,0.95), rgba(120,30,20,0.97));
     color: white;
     padding: 24px 28px;
     border-radius: 14px;
     text-align: center;
-    border: 2px solid #ffb199;
-    box-shadow: 0 0 25px rgba(231, 76, 60, 0.45), 0 10px 25px rgba(0,0,0,0.5);
-    display: none;
-    z-index: 20;
+    z-index: 300;
 }
 
+#start-screen {
+    background: linear-gradient(160deg, rgba(31, 58, 95, 0.95), rgba(13, 27, 42, 0.97));
+    border: 2px solid #f1c40f;
+    box-shadow: 0 0 25px rgba(241, 196, 15, 0.35), 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+#game-over {
+    background: linear-gradient(160deg, rgba(192, 57, 43, 0.95), rgba(120, 30, 20, 0.97));
+    border: 2px solid #ffb199;
+    box-shadow: 0 0 25px rgba(231, 76, 60, 0.45), 0 10px 25px rgba(0, 0, 0, 0.5);
+    display: none;
+}
+
+#start-screen h2,
 #game-over h2 {
-    color: #ffe3dc;
+    margin: 0 0 8px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px currentColor;
+}
+
+#start-screen h2 { color: #f1c40f; }
+#game-over h2 { color: #ffe3dc; }
+
+#start-screen p,
+#game-over p {
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+#start-screen small {
+    display: block;
+    margin-top: 10px;
+    font-size: 11px;
+    opacity: 0.6;
 }
 
 @keyframes pulse {
@@ -192,7 +340,7 @@ body {
     50% { opacity: 0.5; }
 }
 
-/* Animazione di vibrazione schermo quando sbatti */
+/* Screen shake on impact */
 @keyframes shake {
     0% { transform: translate(1px, 1px) rotate(0deg); }
     10% { transform: translate(-1px, -2px) rotate(-1deg); }
@@ -210,39 +358,4 @@ body {
 .shake {
     animation: shake 0.3s;
     animation-iteration-count: 2;
-}
-
-#steering-toggle {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: linear-gradient(160deg, rgba(0,0,0,0.8), rgba(20,20,20,0.6));
-    color: #2ecc71;
-    border: 2px solid #2ecc71;
-    border-radius: 20px;
-    padding: 8px 14px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    z-index: 40;
-    box-shadow: 0 0 8px rgba(46, 204, 113, 0.35);
-    transition: all 0.15s ease;
-}
-
-#steering-toggle:hover {
-    background: rgba(44, 62, 80, 0.95);
-    box-shadow: 0 0 14px rgba(46, 204, 113, 0.55);
-    transform: translateY(-1px);
-}
-
-#steering-toggle.imu-active {
-    color: #f1c40f;
-    border-color: #f1c40f;
-    box-shadow: 0 0 8px rgba(241, 196, 15, 0.35);
-}
-
-#steering-toggle.imu-active:hover {
-    box-shadow: 0 0 14px rgba(241, 196, 15, 0.55);
 }
