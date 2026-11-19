@@ -1,3 +1,4 @@
+// --- GAME CONFIGURATION ---
 const gameContainer = document.getElementById('game-container');
 const road = document.getElementById('road');
 const player = document.getElementById('player');
@@ -30,7 +31,13 @@ let steeringInput = 0; // From -1.0 (left) to 1.0 (right)
 let obstacles = [];
 let lastObstacleDistance = 0;
 
+// --- SOCKET.IO COMMUNICATION WITH PYTHON (WEB_UI BRICK) ---
 let socket = null;
+
+// Contact bounce on the physical button can produce two rising edges a few ms
+// apart: without this guard a single click could both restart and toggle.
+const BUTTON_DEBOUNCE_MS = 250;
+let lastButtonPressTime = 0;
 
 function sendSteeringMode(mode) {
     if (socket && socket.connected) {
@@ -54,32 +61,49 @@ if (typeof io !== 'undefined' && window.location.protocol !== 'file:') {
             }
         });
 
-        // 2. Receives joystick click to start or restart
+        // 2. Receives joystick click: starts the game, restarts it after a
+        //    crash, and switches the steering mode while actually driving
         socket.on('button_press', () => {
-            startGameAction();
+            const now = Date.now();
+            if (now - lastButtonPressTime < BUTTON_DEBOUNCE_MS) return;
+            lastButtonPressTime = now;
+
+            if (isGameStarted && !isGameOver) {
+                setSteeringMode(currentSteeringMode === MODE_JOYSTICK ? MODE_IMU : MODE_JOYSTICK);
+            } else {
+                startGameAction();
+            }
         });
     } catch (e) {
         console.log("Socket.IO initialization skipped (local PC mode)");
     }
 }
 
-// Toggle button between Joystick and IMU
-if (steeringToggleBtn) {
-    steeringToggleBtn.addEventListener('click', () => {
-        currentSteeringMode = (currentSteeringMode === MODE_JOYSTICK) ? MODE_IMU : MODE_JOYSTICK;
-        steeringInput = 0;
+// Applies a steering mode: updates the label, the board and the local state
+// together, so the button and the joystick click can never disagree.
+function setSteeringMode(mode) {
+    currentSteeringMode = mode;
+    steeringInput = 0;
 
-        if (currentSteeringMode === MODE_IMU) {
+    if (steeringToggleBtn) {
+        if (mode === MODE_IMU) {
             steeringToggleBtn.textContent = 'Steer: IMU';
             steeringToggleBtn.classList.add('imu-active');
         } else {
             steeringToggleBtn.textContent = 'Steer: JOYSTICK';
             steeringToggleBtn.classList.remove('imu-active');
         }
+    }
 
+    sendSteeringMode(mode);
+}
+
+// Toggle button between Joystick and IMU
+if (steeringToggleBtn) {
+    steeringToggleBtn.addEventListener('click', () => {
+        setSteeringMode(currentSteeringMode === MODE_JOYSTICK ? MODE_IMU : MODE_JOYSTICK);
         // Remove focus so Spacebar does not trigger the button again
         steeringToggleBtn.blur();
-        sendSteeringMode(currentSteeringMode);
     });
 }
 
